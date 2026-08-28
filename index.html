@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo Streaming</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f0f11;
+            --primary-color: #e50914;
+            --text-color: #ffffff;
+            --secondary-text: #a3a3a3;
+            --card-bg: #1a1a1f;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+            padding-bottom: 50px;
+        }
+
+        header {
+            padding: 40px 30px 20px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, rgba(15, 15, 17, 0) 100%);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        header h1 {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            color: var(--primary-color);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .search-container {
+            position: relative;
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-container input {
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-color);
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s, background 0.3s;
+        }
+
+        .search-container input:focus {
+            border-color: var(--primary-color);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .category-section {
+            margin-top: 30px;
+            padding-left: 30px;
+            padding-right: 30px;
+        }
+
+        .category-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .carousel-container {
+            display: flex;
+            overflow-x: auto;
+            gap: 20px;
+            padding-bottom: 20px;
+            scroll-behavior: smooth;
+        }
+
+        .carousel-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .carousel-container::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .carousel-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        .carousel-container::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            min-width: 200px;
+            max-width: 200px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
+            z-index: 10;
+        }
+
+        .card img {
+            width: 100%;
+            aspect-ratio: 2 / 3;
+            object-fit: cover;
+            display: block;
+        }
+
+        .info {
+            padding: 15px;
+            background: linear-gradient(to top, rgba(26, 26, 31, 1) 60%, rgba(26, 26, 31, 0) 100%);
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .card:hover .info {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .info h3 {
+            font-size: 14px;
+            margin: 0 0 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .info .year {
+            color: var(--secondary-text);
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: var(--primary-color);
+            color: white;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        #app-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: var(--secondary-text);
+            font-size: 18px;
+            width: 100%;
+        }
+
+        /* Modal do Player de Vídeo */
+        #VideoContent {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .video-container {
+            width: 80%;
+            max-width: 1000px;
+            aspect-ratio: 16/9;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(229, 9, 20, 0.4);
+            position: relative;
+        }
+
+        .video-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            z-index: 1001;
+            background: none;
+            border: none;
+        }
+
+        .close-btn:hover {
+            color: var(--primary-color);
+        }
+
+        .catalog-section {
+            margin: 20px 0;
+            padding: 0 30px;
+        }
+
+        .card-continue {
+            min-width: 200px;
+            max-width: 220px;
+            background: #181818;
+            border-radius: 6px;
+            overflow: hidden;
+            transition: transform 0.2s ease;
+        }
+
+        .card-continue:hover {
+            transform: scale(1.03);
+        }
+
+        .card-continue a {
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .thumb-wrapper {
+            position: relative;
+            width: 100%;
+            height: 120px;
+            background: #000;
+        }
+
+        .thumb-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .progress-bar-bg {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: #e50914;
+            transition: width 0.3s ease;
+        }
+
+        .card-info {
+            padding: 10px;
+        }
+
+        .card-info h4 {
+            margin: 0 0 5px 0;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-info p {
+            margin: 0;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        /* Menu de Opções (3 pontos) */
+        .card-continue {
+            min-width: 200px;
+            max-width: 220px;
+            background: #181818;
+            border-radius: 6px;
+            overflow: hidden;
+            transition: transform 0.2s ease;
+            position: relative;
+        }
+
+        .options-wrapper {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            z-index: 20;
+        }
+
+        .options-btn {
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            transition: background 0.2s;
+        }
+
+        .options-btn:hover {
+            background: rgba(0,0,0,0.9);
+        }
+
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 32px;
+            right: 0;
+            background: #2a2a32;
+            border-radius: 4px;
+            min-width: 130px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 10px 15px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: background 0.2s;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background: #40404a;
+        }
+
+        .dropdown-menu a.text-danger:hover {
+            background: var(--primary-color);
+        }
+
+        /* Modal de Confirmação */
+        #ConfirmModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .confirm-box {
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }
+
+        .confirm-box h3 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+        }
+
+        .confirm-box p {
+            font-size: 14px;
+            color: var(--secondary-text);
+            margin-bottom: 20px;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn-cancel, .btn-delete {
+            padding: 10px 18px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+        }
+
+        .btn-cancel {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        
+        .btn-cancel:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .btn-delete {
+            background: var(--primary-color);
+            color: #fff;
+        }
+
+        .btn-delete:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="header-content">
+            <h1>Homeflix</h1>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Pesquisar filmes ou séries...">
+            </div>
+        </div>
+    </header>
+
+    <!-- Modal do Player de Vídeo -->
+    <div id="VideoContent">
+        <button class="close-btn" onclick="fecharPlayer()">&times;</button>
+        <div class="video-container" id="iframe-holder"></div>
+    </div>
+
+    <!-- Modal de Confirmação -->
+    <div id="ConfirmModal">
+        <div class="confirm-box">
+            <h3>Remover do Histórico?</h3>
+            <p>Tem certeza que deseja remover este título de continuar assistindo?</p>
+            <div class="confirm-actions">
+                <button class="btn-cancel" onclick="fecharModalRemocao()">Cancelar</button>
+                <button class="btn-delete" id="btn-confirm-delete">Remover</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção Continue Assistindo -->
+    <section id="section-continue" style="display: none;" class="catalog-section">
+        <h2 class="category-title">Continue Assistindo</h2>
+        <div id="continue-cards-container" class="carousel-container"></div>
+    </section>
+
+    <!-- Contêiner do Catálogo Principal -->
+    <div id="app-container">
+        <div class="loading">Carregando catálogo...</div>
+    </div>
+
+    <script>
+        const API_BASE = "/api";
+
+        // Renderiza cada secao do catálogo
+        function renderItems(items, container, titleText) {
+            const section = document.createElement("div");
+            section.classList.add("category-section");
+
+            const title = document.createElement("h2");
+            title.classList.add("category-title");
+            title.textContent = titleText;
+
+            const carousel = document.createElement("div");
+            carousel.classList.add("carousel-container");
+
+            if (titleText.startsWith("Resultados")) {
+                carousel.style.flexWrap = "wrap";
+            }
+
+            items.forEach(item => {
+                const card = document.createElement("div");
+                card.classList.add("card");
+                
+                // Ao clicar, redireciona para a página de detalhes
+                card.onclick = () => window.location.href = `/details.html?tipo=${item.tipo}&id=${item.tmdb_id}`;
+
+                const notaBadge = item.nota ? `<span class="tag">⭐ ${item.nota.toFixed(1)}</span>` : '';
+                const tipoBadge = item.tipo ? `<span class="tag">${item.tipo.toUpperCase()}</span>` : '';
+
+                card.innerHTML = `
+                    <img src="${item.imagem || 'https://via.placeholder.com/200x300?text=Sem+Capa'}" alt="${item.titulo}" loading="lazy">
+                    <div class="info">
+                        <h3>${item.titulo || 'Sem Título'}</h3>
+                        <p class="year">${item.ano || ''}</p>
+                        <div class="tags">
+                            ${tipoBadge}
+                            ${notaBadge}
+                        </div>
+                    </div>
+                `;
+                carousel.appendChild(card);
+            });
+
+            section.appendChild(title);
+            section.appendChild(carousel);
+            container.appendChild(section);
+        }
+
+        // Carrega o catálogo vindo da FastAPI/TMDB
+        async function loadCatalog() {
+            const container = document.getElementById("app-container");
+            container.innerHTML = "<div class='loading'>Carregando catálogo...</div>";
+
+            try {
+                // Requisições paralelas para acelerar o carregamento
+                const [trendingRes, moviesRes, seriesRes] = await Promise.all([
+                    fetch(`${API_BASE}/catalog/trending`),
+                    fetch(`${API_BASE}/catalog/movies/popular`),
+                    fetch(`${API_BASE}/catalog/series/popular`)
+                ]);
+
+                const trendingData = await trendingRes.json();
+                const moviesData = await moviesRes.json();
+                const seriesData = await seriesRes.json();
+
+                container.innerHTML = ""; // Limpa o estado de loading
+
+                if (trendingData.resultados?.length) renderItems(trendingData.resultados, container, "Em Alta na Semana");
+                if (moviesData.resultados?.length) renderItems(moviesData.resultados, container, "Filmes Populares");
+                if (seriesData.resultados?.length) renderItems(seriesData.resultados, container, "Séries Populares");
+
+            } catch (error) {
+                console.error("Erro ao carregar o catálogo:", error);
+                container.innerHTML = "<div class='loading' style='color: var(--primary-color)'>Erro ao carregar o catálogo. Certifique-se de que a FastAPI está rodando.</div>";
+            }
+        }
+
+        // Abre o player em modal chamando a rota de stream
+        async function abrirPlayer(tipo, tmdbId, season = 1, episode = 1, titulo, capa) {
+            if (!tmdbId || tmdbId === "null" || tmdbId === "undefined") {
+                console.error("ID inválido detectado:", tmdbId);
+                alert("Erro: Conteúdo indisponível.");
+                return;
+            }
+
+            try {
+                let endpoint = `${API_BASE}/stream/${tipo}/${tmdbId}`;
+                if (tipo === "serie") endpoint += `?s=${season}&e=${episode}`;
+
+                const response = await fetch(endpoint);
+                const data = await response.json();
+
+                if (data.iframe) {
+                    document.getElementById("iframe-holder").innerHTML = data.iframe;
+                    document.getElementById("VideoContent").style.display = "flex";
+
+                    // Envia para o histórico
+                    await fetch(`${API_BASE}/history`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            tmdb_id: tmdbId,
+                            titulo: titulo || "Conteúdo",
+                            tipo: tipo,
+                            capa: capa || 'https://via.placeholder.com/200x300?text=Sem+Capa',
+                            temporada: tipo === 'serie' ? season : null,
+                            episodio: tipo === 'serie' ? episode : null,
+                            position: 0,
+                            duration: 100,
+                            updatedAt: Date.now() / 1000
+                        })
+                    });
+                    // Atualiza o carrossel se estiver na tela principal
+                    if (typeof carregarContinueAssistindo === 'function') {
+                        carregarContinueAssistindo();
+                    }
+                }
+            } catch (error) {
+                console.error("Erro ao abrir player:", error);
+                alert("Erro ao carregar o player. Tente novamente.");
+            }
+        }
+
+        function fecharPlayer() {
+            document.getElementById("VideoContent").style.display = "none";
+            document.getElementById("iframe-holder").innerHTML = ""; // Para o áudio/vídeo
+        }
+
+        function fecharModalRemocao() {
+            document.getElementById("ConfirmModal").style.display = "none";
+        }
+        
+        function confirmarRemocao(tipo, id) {
+            const modal = document.getElementById("ConfirmModal");
+            modal.style.display = "flex";
+            const btn = document.getElementById("btn-confirm-delete");
+            btn.onclick = () => removerDoHistorico(tipo, id);
+        }
+
+        async function removerDoHistorico(tipo, id) {
+            fecharModalRemocao();
+            try {
+                await fetch(`${API_BASE}/history/${tipo}/${id}`, { method: 'DELETE' });
+                carregarContinueAssistindo();
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao remover do histórico.");
+            }
+        }
+        
+        function toggleMenu(event, tmdbId) {
+            event.preventDefault();
+            event.stopPropagation();
+            const dropdown = document.getElementById(`dropdown-${tmdbId}`);
+            const isVisible = dropdown.style.display === 'block';
+            
+            // Fecha todos os outros abertos
+            document.querySelectorAll('.dropdown-menu').forEach(d => d.style.display = 'none');
+            
+            // Abre o atual se não estava visível
+            if (!isVisible) dropdown.style.display = 'block';
+        }
+
+        // Fecha menus ao clicar fora
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.options-wrapper')) {
+                document.querySelectorAll('.dropdown-menu').forEach(d => d.style.display = 'none');
+            }
+        });
+
+        // Busca ao digitar
+        let searchTimeout;
+        document.getElementById("searchInput").addEventListener("input", (e) => {
+            const query = e.target.value.trim();
+            clearTimeout(searchTimeout);
+
+            if (query.length === 0) {
+                loadCatalog();
+                return;
+            }
+
+            if (query.length < 2) return;
+
+            searchTimeout = setTimeout(async () => {
+                const container = document.getElementById("app-container");
+                container.innerHTML = "<div class='loading'>Pesquisando...</div>";
+
+                try {
+                    const response = await fetch(`${API_BASE}/search?q=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+
+                    container.innerHTML = "";
+
+                    if (data.status === "success" && data.resultados.length > 0) {
+                        renderItems(data.resultados, container, `Resultados para "${query}"`);
+                    } else {
+                        const safeQuery = query.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        container.innerHTML = `<div class='loading'>Nenhum resultado encontrado para "${safeQuery}".</div>`;
+                    }
+                } catch (error) {
+                    console.error("Erro na pesquisa:", error);
+                    container.innerHTML = "<div class='loading' style='color: var(--primary-color)'>Erro ao pesquisar.</div>";
+                }
+            }, 500);
+        });
+
+        // Carrega o Histórico do "Continue Assistindo"
+        async function carregarContinueAssistindo() {
+            try {
+                const response = await fetch(`${API_BASE}/history`);
+                const historico = await response.json();
+
+                const itens = historico.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+                const section = document.getElementById("section-continue");
+                const container = document.getElementById("continue-cards-container");
+
+                if (!container || itens.length === 0) {
+                    if (section) section.style.display = "none";
+                    return;
+                }
+
+                if (section) section.style.display = "block";
+
+                container.innerHTML = itens.map(item => {
+                    const minAtual = Math.floor((item.position || 0) / 60);
+                    const minTotal = Math.floor((item.duration || 0) / 60);
+                    const porcentagem = item.duration ? Math.min(100, Math.floor((item.position / item.duration) * 100)) : 0;
+                    const subtitle = item.tipo === 'serie' ? `T${item.temporada} E${item.episodio}` : 'Filme';
+
+                    return `
+                        <div class="card-continue">
+                            <div class="options-wrapper">
+                                <button class="options-btn" onclick="toggleMenu(event, '${item.tmdb_id}')">⋮</button>
+                                <div class="dropdown-menu" id="dropdown-${item.tmdb_id}">
+                                    <a href="#" onclick="event.preventDefault(); event.stopPropagation(); window.location.href='/details.html?tipo=${item.tipo}&id=${item.tmdb_id}'">Ver Detalhes</a>
+                                    <a href="#" class="text-danger" onclick="event.preventDefault(); event.stopPropagation(); confirmarRemocao('${item.tipo}', '${item.tmdb_id}')">Remover</a>
+                                </div>
+                            </div>
+                            <a href="#" onclick="event.preventDefault(); abrirPlayer('${item.tipo}', '${item.tmdb_id}', ${item.temporada || 1}, ${item.episodio || 1}, '${item.titulo}', '${item.capa}')">
+                                <div class="thumb-wrapper">
+                                    <img src="${item.capa}" alt="${item.titulo}" />
+                                    <div class="progress-bar-bg">
+                                        <div class="progress-bar-fill" style="width: ${porcentagem}%;"></div>
+                                    </div>
+                                </div>
+                                <div class="card-info">
+                                    <h4>${item.titulo}</h4>
+                                    <p>${subtitle}</p>
+                                </div>
+                            </a>
+                        </div>
+                    `;
+                }).join("");
+            } catch (err) {
+                console.error("Erro ao carregar continue assistindo:", err);
+            }
+        }
+
+        // Inicialização automática
+        document.addEventListener("DOMContentLoaded", () => {
+            loadCatalog();
+            carregarContinueAssistindo();
+        });
+    </script>
+</body>
+
+</html>
