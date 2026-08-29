@@ -85,6 +85,36 @@
         .spinner { width: 40px; height: 40px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.1); border-left-color: var(--primary); animation: spin 0.9s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .state-error { color: var(--primary); }
+    
+        /* SERVER SELECTOR */
+        .server-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+        .server-btn {
+            background: #1e1e24;
+            color: #ccc;
+            border: 1px solid #333;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .server-btn:hover {
+            background: #2a2a30;
+            color: #fff;
+        }
+        .server-btn.active {
+            background: var(--primary, #e50914);
+            color: #fff;
+            border-color: var(--primary, #e50914);
+        }
+
     </style>
 </head>
 
@@ -97,6 +127,10 @@
     <!-- Modal do Player de Vídeo -->
     <div id="VideoContent">
         <button class="close-btn" onclick="fecharPlayer()">&times;</button>
+        <div class="server-selector">
+            <button class="server-btn active" id="btn-server-pomfy" onclick="trocarServidor('pomfy')">Player Principal (Pomfy)</button>
+            <button class="server-btn" id="btn-server-superflix" onclick="trocarServidor('superflix')">Player Alternativo (Superflix)</button>
+        </div>
         <div class="video-container" id="iframe-holder"></div>
     </div>
 
@@ -112,6 +146,14 @@
         const params = new URLSearchParams(window.location.search);
         const tipo = params.get('tipo');
         const id = params.get('id') || params.get('tmdb_id');
+        
+        let currentStreamParams = {
+            tipo: null,
+            tmdbId: null,
+            season: 1,
+            episode: 1,
+            server: 'pomfy'
+        };
 
         async function loadDetails() {
             if (!tipo || !id) return;
@@ -173,17 +215,24 @@
             } catch (err) { list.innerHTML = `<div class="state-box state-error">Erro ao carregar.</div>`; }
         }
 
-        async function abrirPlayer(tipoMedia, tmdbId, season = 1, episode = 1) {
+        async function abrirPlayer(tipoMedia, tmdbId, season = 1, episode = 1, server = currentStreamParams.server) {
             if (!tmdbId || tmdbId === "null" || tmdbId === "undefined") {
                 console.error("ID inválido detectado:", tmdbId);
                 alert("Erro: Conteúdo indisponível.");
                 return;
             }
 
+            // Atualiza o estado
+            const tipoNormalizado = (tipoMedia === 'movie' || tipoMedia === 'filme') ? 'filme' : 'serie';
+            currentStreamParams = { tipo: tipoNormalizado, tmdbId, season, episode, server };
+
             try {
-                const tipoNormalizado = (tipoMedia === 'movie' || tipoMedia === 'filme') ? 'filme' : 'serie';
                 let endpoint = `${API_BASE}/stream/${tipoNormalizado}/${tmdbId}`;
-                if (tipoNormalizado === 'serie') endpoint += `?s=${season}&e=${episode}`;
+                if (tipoNormalizado === 'serie') {
+                    endpoint += `?s=${season}&e=${episode}&server=${server}`;
+                } else {
+                    endpoint += `?server=${server}`;
+                }
 
                 const response = await fetch(endpoint);
                 const data = await response.json();
@@ -216,6 +265,24 @@
             } catch (error) { 
                 console.error(error);
                 alert("Erro ao abrir player."); 
+            }
+        }
+
+        
+        function trocarServidor(novoServidor) {
+            // Atualiza os botoes visuais
+            document.querySelectorAll('.server-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-server-${novoServidor}`).classList.add('active');
+            
+            // Recarrega o player usando o estado atual mas com novo servidor
+            if (currentStreamParams.tmdbId) {
+                abrirPlayer(
+                    currentStreamParams.tipo,
+                    currentStreamParams.tmdbId,
+                    currentStreamParams.season,
+                    currentStreamParams.episode,
+                    novoServidor
+                );
             }
         }
 

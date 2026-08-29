@@ -29,6 +29,7 @@ app.add_middleware(
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 TMDB_BASE_URL = "https://api.themoviedb.org/3"
 EXTERNAL_API_URL = os.getenv("EXTERNAL_API_URL")
+SUPERFLIX_BASE_URL = os.getenv("SUPERFLIX_BASE_URL")
 
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -242,16 +243,20 @@ async def search_tmdb(q: str = Query(..., min_length=1)):
         raise HTTPException(status_code=502, detail=f"Erro ao conectar com TMDB: {e}")
 
 @app.get("/api/stream/filme/{tmdb_id}")
-async def get_movie_stream(tmdb_id: str):
+async def get_movie_stream(tmdb_id: str, server: str = Query("pomfy")):
     """
     Retorna o link do player embed para um filme via TMDB ID.
     """
-    player_url = f"{EXTERNAL_API_URL}/filme/{tmdb_id}"
+    if server == "pomfy":
+        player_url = f"{EXTERNAL_API_URL}/filme/{tmdb_id}"
+    else:
+        player_url = f"{SUPERFLIX_BASE_URL}/filme/{tmdb_id}"
     
     return {
         "status": "success",
         "tipo": "filme",
         "tmdb_id": tmdb_id,
+        "server": server,
         "player_url": player_url,
         "iframe": f'<iframe src="{player_url}" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>'
     }
@@ -260,13 +265,16 @@ async def get_movie_stream(tmdb_id: str):
 async def get_tv_stream(
     tmdb_id: str, 
     season: int = Query(1, alias="s"), 
-    episode: int = Query(1, alias="e")
+    episode: int = Query(1, alias="e"),
+    server: str = Query("pomfy")
 ):
     """
     Retorna o link do player embed para uma série/anime.
-    Exemplo de uso: /api/stream/serie/1399?s=1&e=1
     """
-    player_url = f"{EXTERNAL_API_URL}/serie/{tmdb_id}/{season}/{episode}"
+    if server == "pomfy":
+        player_url = f"{EXTERNAL_API_URL}/serie/{tmdb_id}/{season}/{episode}"
+    else:
+        player_url = f"{SUPERFLIX_BASE_URL}/serie/{tmdb_id}/{season}/{episode}"
     
     return {
         "status": "success",
@@ -274,8 +282,9 @@ async def get_tv_stream(
         "tmdb_id": tmdb_id,
         "season": season,
         "episode": episode,
+        "server": server,
         "player_url": player_url,
-        "iframe": f'<iframe src="{player_url}" width="100%" height="100%" frameborder="0" allowfullscreen></iframe>'
+        "iframe": f'<iframe src="{player_url}" width="100%" height="100%" frameborder="0" allowfullscreen allow="autoplay; encrypted-media" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>'
     }
 
 @app.get("/api/details/{tipo}/{tmdb_id}")
