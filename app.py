@@ -284,7 +284,7 @@ async def get_tv_stream(
         "episode": episode,
         "server": server,
         "player_url": player_url,
-        "iframe": f'<iframe src="{player_url}" width="100%" height="100%" frameborder="0" allowfullscreen allow="autoplay; encrypted-media" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>'
+        "iframe": f'<iframe src="{player_url}" width="100%" height="100%" frameborder="0" allowfullscreen"></iframe>'
     }
 
 @app.get("/api/details/{tipo}/{tmdb_id}")
